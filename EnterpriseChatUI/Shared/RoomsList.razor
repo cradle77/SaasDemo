@@ -1,0 +1,24 @@
+﻿@inject ChatService ChatService
+@using EnterpriseChat.Shared
+@using EnterpriseChatUI.Services
+
+@if (_rooms != null)
+{
+    foreach (var room in _rooms)
+    {
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@($"chatroom/{room.Id}")">
+                <span class="oi oi-lock-locked" aria-hidden="true"></span> @room.Name
+            </NavLink>
+        </div>
+    }
+}
+
+@code {
+    private IEnumerable<ChatRoom> _rooms = null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _rooms = await ChatService.GetRoomsAsync();
+    }
+}

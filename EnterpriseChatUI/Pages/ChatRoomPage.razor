@@ -1,0 +1,70 @@
+﻿@using EnterpriseChat.Shared
+@using EnterpriseChatUI.Services
+@page "/chatroom/{RoomId:int}"
+@attribute [Authorize]
+@inject ChatService ChatService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@if (this.Room == null || this.Messages == null)
+{
+    <p>... loading ...</p>
+}
+else
+{
+    <h1><span class="channel-menu_prefix">#</span> @this.Room.Name</h1>
+
+    <div class="main">
+        <div class="message-history">
+            @foreach (var message in this.Messages)
+            {
+                <div class="message">
+                    <a class="message_profile-pic" href=""></a>
+                    <a class="message_username" href="">@message.Username</a>
+                    <span class="message_timestamp">@message.TimeStamp</span>
+                    <span class="message_star"></span>
+                    <span class="message_content">@message.Content</span>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="footer">
+        <div class="user-menu"><span class="user-menu_profile-pic"></span><span class="user-menu_username">@_username</span><img class="connection_icon" src="data:image/png;base64,iVBORw0KGgoAAAAN..." /><span class="connection_status">online</span></div>
+        <div class="input-box"><input class="input-box_text" type="text" @onkeydown="@Enter" @bind-value="_newMessage" @bind-value:event="oninput" /></div>
+    </div>
+}
+
+@code {
+    [ParameterAttribute]
+    public int RoomId { get; set; }
+
+    public ChatRoom Room { get; set; } = null;
+
+    public IEnumerable<ChatMessage> Messages = null;
+
+    private string _newMessage = string.Empty;
+
+    private string _username = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        base.OnParametersSetAsync();
+
+        var context = await this.AuthenticationStateProvider.GetAuthenticationStateAsync();
+        
+        _username = context.User.Identity.Name;
+
+        this.Room = await this.ChatService.GetRoomByIdAsync(this.RoomId);
+
+        this.Messages = await this.ChatService.GetMessagesAsync(this.RoomId);
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if ((e.Code == "Enter" || e.Code == "NumpadEnter") && !string.IsNullOrWhiteSpace(_newMessage))
+        {
+            this.Messages = await this.ChatService.AddMessageAsync(this.RoomId, _newMessage);
+
+            _newMessage = string.Empty;
+        }
+    }
+}
